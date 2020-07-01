@@ -1,0 +1,25 @@
+---
+- name: Nginx with rpm build and SSL termination
+  hosts: 10.0.0.2
+  gather_facts: false
+  become: yes
+  
+  tasks:
+    - name: Copy Nginx RPM Package to Host
+      copy:
+       src: rpmbuild/RPMS/nginx.rpm
+       dest: ~
+       remote_src: yes
+    
+    - name: Install Copied Nginx Package
+      shell: rpm -i  ~/nginx.rpm
+
+    - name: Configure Self SSL Termination and Terminate default one
+      template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+
+    - name: Restart the Nginx
+      service:
+        name: nginx
+        state: restarted

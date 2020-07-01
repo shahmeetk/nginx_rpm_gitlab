@@ -1,0 +1,47 @@
+# Centos image is used to get some inbuild rpm utilities
+
+image: centos:latest
+job1:
+  script: " 
+     yum update -y;
+     
+     #Install the pre-requisite tools to build rpm 
+     yum install -y wget rpm* gcc gpg* rng-tools git;
+     
+     # Download Nginx Source Code && dependencies are assumend to be in runner machine
+     
+     wget https://nginx.org/download/nginx-1.16.1.tar.gz && tar xzvf nginx-1.16.1.tar.gz;
+     
+     #Configure and compile the nginx before build rpm package to check package error free. 
+     #./nginx-1.16.1/configure;
+     
+     # Create the required RPM deirectory Structure
+     mkdir -p rpmbuild && mkdir -p rpmbuild/SOURCES && mkdir -p rpmbuild/SPECS;
+     
+     # create a specfile for NGINX rpm build
+     rpmdev-newspec rpmbuild/SPECS/nginx.spec;
+     
+     # Copy the Nginx source code into rpm build source directory. 
+     cp -a nginx-1.16.1.tar.gz rpmbuild/SOURCES/;
+     
+     #overide the generated spec bby rpmdev-newspec command with your specific metadata
+     
+     cat <<EOF > rpmbuild/SPECS/nginx.spec
+            Name:        nginx
+            Version:     0.1
+            Release        1%{?dist}
+            Summary        ASCII based tetris game
+            License        BSD
+            URL            https://nginx.org/download/
+            Source0        nginx-1.16.1.tar.gz
+            BuildRequires gcc
+            %description
+            devops rpm nginx rpm package
+          EOF;
+
+    #  build rpm package from nginx spec
+      rpmbuild -ba rpmbuild/SPECS/nginx.spec;
+
+  "
+job2:
+  script: "rpmsign --addsign rpmbuilder/rpmbuild/RPMS/nginx.rpm"
